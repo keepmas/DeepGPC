@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>DeepGPC | 电商投放盈亏精算系统</title>
-    <!-- 引入 Supabase SDK -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- 使用国内可用的淘宝 npmmirror CDN 引入 Supabase SDK -->
+    <script src="https://registry.npmmirror.com/@supabase/supabase-js/2/files/dist/umd/supabase.js"></script>
     
     <style>
         /* ================= 登录/注册页样式 ================= */
@@ -170,7 +170,7 @@
                         <div id="res-health-desc" class="health-desc">正在计算...</div>
                     </div>
 
-                    <!-- 财务明细面板 (严格按照减法公式展示) -->
+                    <!-- 财务明细面板 -->
                     <div class="details-toggle" id="btn-toggle-details">查看真实财务对账明细 ▾</div>
                     <div class="details-panel" id="details-panel">
                         <div class="details-row" style="font-weight: bold;"><span>产品售价</span><span id="det-price">0.00</span></div>
@@ -186,13 +186,11 @@
         </div>
     </div>
 
+    <!-- 核心逻辑脚本 -->
     <script>
         window.addEventListener('DOMContentLoaded', () => {
-        
-        const SUPABASE_URL = 'https://kkqtasejkqkzttquzobw.supabase.co';
-        const SUPABASE_ANON_KEY = 'sb_publishable_ndItPdxDyzerQgiXdrF8Sg_49pn0F59';  
-
-     
+			const SUPABASE_URL = 'https://kkqtasejkqkzttquzobw.supabase.co';
+			const SUPABASE_ANON_KEY = 'sb_publishable_ndItPdxDyzerQgiXdrF8Sg_49pn0F59';  
 
             // 初始化 Supabase
             let supabaseClient = null;
@@ -325,7 +323,7 @@
                 
                 const F_rate = Math.min(Math.max(getVal('in-platform-rate'), 0), 100) / 100;
                 const Tax_rate = Math.min(Math.max(getVal('in-tax-rate'), 0), 100) / 100;
-                const totalRate = F_rate + Tax_rate; // 默认 0.01 + 0.01 = 0.02
+                const totalRate = F_rate + Tax_rate; 
                 
                 const adCost = Math.max(getVal('in-adcost'), 0); 
                 
@@ -338,18 +336,18 @@
                 const platformFee = P * totalRate; // 售价*0.02
 
                 // ========================================================
-                // 🌟 核心公式实现：每单净利润 = 售价 - 售价*0.02 - 产品成本 - 广告费 - 货损 - 退货成本项
+                // 🌟 核心公式：每单净利润 = 售价 - 售价*0.02 - 产品成本 - 广告费 - 货损 - 退货成本项
                 // ========================================================
                 const netProfit = P - platformFee - totalBaseCost - adCost - damageCost - returnCost;
 
-                // 计算保本投产比 (分母为 毛利 - 退货成本 - 货损)
+                // 计算保本投产比 
                 const denominatorSum = grossProfit - (returnCost + damageCost);
                 let breakevenROI = 999;
                 if (denominatorSum > 0) {
                     breakevenROI = P / denominatorSum;
                 }
 
-                // ===== 更新财务明细 UI (直观的减法流水账) =====
+                // ===== 更新财务明细 UI =====
                 document.getElementById('det-price').innerText = P.toFixed(2) + ' 元';
                 document.getElementById('det-platform-fee').innerText = '-' + platformFee.toFixed(2) + ' 元';
                 document.getElementById('det-total-cost').innerText = '-' + totalBaseCost.toFixed(2) + ' 元';
