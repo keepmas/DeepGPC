@@ -2,37 +2,19 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <!-- 强化移动端和基础安全设置 -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="referrer" content="strict-origin-when-cross-origin">
-    <!-- 核心防御：CSP 内容安全策略 (只允许加载白名单内的脚本和连接，防止恶意注入) -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://*.supabase.co; style-src 'self' 'unsafe-inline'; connect-src 'self' https://*.supabase.co; img-src 'self' data:; object-src 'none';">
-    
     <title>DeepGPC | 电商投放盈亏精算系统</title>
+    <!-- 引入 Supabase SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
     <style>
-        /* ================= 登录页面的样式 ================= */
-        .auth-wrapper {
-            display: flex; justify-content: center; align-items: center;
-            min-height: 100vh; background: #F2F2F2; padding: 16px;
-            position: fixed; top: 0; left: 0; width: 100%; z-index: 9999;
-        }
-        .auth-card {
-            background: #FFFFFF; border-radius: 12px; padding: 24px;
-            width: 100%; max-width: 400px; box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-        }
+        /* ================= 登录/注册页样式 ================= */
+        .auth-wrapper { display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #F2F2F2; padding: 16px; position: fixed; top: 0; left: 0; width: 100%; z-index: 9999; }
+        .auth-card { background: #FFFFFF; border-radius: 12px; padding: 24px; width: 100%; max-width: 400px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
         .auth-card h2 { margin: 0 0 20px; font-size: 22px; text-align: center; color: #111; }
-        .auth-card input {
-            width: 100%; padding: 12px; margin-bottom: 16px;
-            border: 1px solid #E5E5E5; border-radius: 8px; font-size: 15px;
-            outline: none; transition: border-color 0.2s;
-        }
+        .auth-card input { width: 100%; padding: 12px; margin-bottom: 16px; border: 1px solid #E5E5E5; border-radius: 8px; font-size: 15px; outline: none; transition: border-color 0.2s; }
         .auth-card input:focus { border-color: #07C160; }
-        .auth-card button {
-            width: 100%; padding: 12px; border: none; border-radius: 8px;
-            font-size: 16px; font-weight: bold; cursor: pointer; transition: opacity 0.2s;
-        }
+        .auth-card button { width: 100%; padding: 12px; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: opacity 0.2s; }
         .auth-card button:disabled { opacity: 0.6; cursor: not-allowed; }
         .auth-btn-primary { background: #07C160; color: white; margin-bottom: 12px; }
         .auth-btn-primary:hover:not(:disabled) { background: #06AD56; }
@@ -43,7 +25,7 @@
         .auth-msg.success { color: #07C160; }
         .auth-forgot { display: block; text-align: center; font-size: 13px; color: #888; margin-top: 16px; text-decoration: underline; cursor: pointer; background: none; border: none; width: auto; margin: 16px auto 0; }
 
-        /* ================= 原计算器样式 ================= */
+        /* ================= 计算器界面样式 ================= */
         :root {
             --excellent-color: #07C160; --good-color: #34C759; --normal-color: #FFCC00;
             --warning-color: #FF9500; --danger-color: #FF3B30; --bg-color: #F2F2F2;
@@ -101,12 +83,11 @@
 </head>
 <body>
 
-    <!-- 登录/注册界面 -->
+    <!-- ================= 登录/注册界面 ================= -->
     <div id="auth-container" class="auth-wrapper">
         <div class="auth-card">
             <h2 id="auth-title">登录 DeepGPC</h2>
             <div id="auth-msg" class="auth-msg"></div>
-            <!-- 使用 autocomplete 允许浏览器记住密码 -->
             <input type="email" id="auth-email" placeholder="邮箱地址" autocomplete="username">
             <input type="password" id="auth-password" placeholder="密码（至少 6 位）" autocomplete="current-password">
             <button class="auth-btn-primary" id="btn-submit">登录</button>
@@ -115,7 +96,7 @@
         </div>
     </div>
 
-    <!-- 计算器界面 (默认隐藏) -->
+    <!-- ================= 计算器界面 ================= -->
     <div id="app-container">
         <div class="top-user-bar">
             <span id="user-info">已登录</span>
@@ -124,11 +105,12 @@
         
         <div class="container">
             <div class="header">DeepGPC 投放盈亏精算</div>
+            
             <!-- 核心结果展示 -->
             <div class="card result-card">
                 <div class="label">真实盈亏平衡投产比 (保本ROI)</div>
                 <div class="value" id="res-breakeven">0.00</div>
-                <div class="sub-text">含平台扣费与税费后的极限生死线</div>
+                <div class="sub-text">含平台扣费、税费与退货折损后的极限生死线</div>
                 <div class="stats-grid">
                     <div class="stats-item">
                         <div class="val" id="res-gross">0.00</div>
@@ -141,7 +123,7 @@
                 </div>
             </div>
 
-            <!-- 基础参数输入 -->
+            <!-- 参数输入 -->
             <div class="card">
                 <div class="card-title">基础参数与成本拆解</div>
                 <div class="form-grid">
@@ -153,8 +135,8 @@
                     <div class="form-item"><label>单次退货整理成本</label><div class="input-wrapper"><input type="number" class="calc-input" id="in-process" value="3.5" min="0" step="0.1"><span class="unit">元</span></div></div>
                     <div class="form-item"><label>退货率</label><div class="input-wrapper"><input type="number" class="calc-input" id="in-return" value="15" min="0" max="100" step="0.1"><span class="unit">%</span></div></div>
                     <div class="form-item"><label>货损率 (坏件)</label><div class="input-wrapper"><input type="number" class="calc-input" id="in-damage" value="3" min="0" max="100" step="0.1"><span class="unit">%</span></div></div>
-                    <div class="form-item"><label>平台扣点 (如天猫5.6)</label><div class="input-wrapper"><input type="number" class="calc-input" id="in-platform-rate" value="5.6" min="0" max="100" step="0.1"><span class="unit">%</span></div></div>
-                    <div class="form-item"><label>税点 (默认1%)</label><div class="input-wrapper"><input type="number" class="calc-input" id="in-tax-rate" value="1" min="0" max="100" step="0.1"><span class="unit">%</span></div></div>
+                    <div class="form-item"><label>平台扣点</label><div class="input-wrapper"><input type="number" class="calc-input" id="in-platform-rate" value="1" min="0" max="100" step="0.1"><span class="unit">%</span></div></div>
+                    <div class="form-item"><label>税费</label><div class="input-wrapper"><input type="number" class="calc-input" id="in-tax-rate" value="1" min="0" max="100" step="0.1"><span class="unit">%</span></div></div>
                 </div>
             </div>
 
@@ -170,12 +152,15 @@
                         <span>实际投产比 (ROI)</span>
                         <div class="roi-input-wrapper"><input type="number" class="calc-input" id="in-roi" value="4.66" min="0" step="0.01"></div>
                     </div>
+                    
                     <div class="dynamic-result">
                         <div class="dyn-item">
                             <span class="lbl">真实预期每单净利润</span>
                             <span class="val profit" id="res-netprofit">0.00 元</span>
                         </div>
                     </div>
+
+                    <!-- 状态研判 -->
                     <div class="health-bar-container">
                         <div class="health-header">
                             <span class="lbl" style="color: #666;">当前投放状态研判</span>
@@ -184,13 +169,17 @@
                         <div class="health-track"><div id="health-progress" class="health-progress"></div></div>
                         <div id="res-health-desc" class="health-desc">正在计算...</div>
                     </div>
+
+                    <!-- 财务明细面板 (严格按照减法公式展示) -->
                     <div class="details-toggle" id="btn-toggle-details">查看真实财务对账明细 ▾</div>
                     <div class="details-panel" id="details-panel">
-                        <div class="details-row"><span>商品总硬成本 (货+快递+包装+险)</span><span id="det-total-cost">0.00</span></div>
-                        <div class="details-row"><span>退货折损 (整理+货损)</span><span id="det-return-loss">0.00</span></div>
-                        <div class="details-row"><span>留存资金 (毛利 - 退货折损)</span><span id="det-retained">0.00</span></div>
-                        <div class="details-row" style="color: var(--danger-color);"><span>平台固定扣费 (扣点+税点)</span><span id="det-platform-fee">0.00</span></div>
-                        <div class="details-row" style="font-weight: bold; color: var(--text-main);"><span>广告极限空间 (留存 - 平台费)</span><span id="det-adspace">0.00</span></div>
+                        <div class="details-row" style="font-weight: bold;"><span>产品售价</span><span id="det-price">0.00</span></div>
+                        <div class="details-row" style="color: var(--danger-color);"><span>减去：售价*0.02 (扣点+税费)</span><span id="det-platform-fee">-0.00</span></div>
+                        <div class="details-row" style="color: var(--danger-color);"><span>减去：产品成本 (硬成本)</span><span id="det-total-cost">-0.00</span></div>
+                        <div class="details-row" style="color: var(--danger-color);"><span>减去：每单广告费</span><span id="det-adcost">-0.00</span></div>
+                        <div class="details-row" style="color: var(--warning-color);"><span>减去：货损</span><span id="det-damage-cost">-0.00</span></div>
+                        <div class="details-row" style="color: var(--warning-color);"><span>减去：退货成本项</span><span id="det-return-cost">-0.00</span></div>
+                        <div class="details-row" style="font-weight: bold; border-top: 1px solid #ccc; padding-top: 6px; margin-top: 6px;"><span>等于：每单净利润</span><span id="det-netprofit">0.00</span></div>
                     </div>
                 </div>
             </div>
@@ -198,17 +187,28 @@
     </div>
 
     <script>
+        window.addEventListener('DOMContentLoaded', () => {
+        
         const SUPABASE_URL = 'https://kkqtasejkqkzttquzobw.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_ndItPdxDyzerQgiXdrF8Sg_49pn0F59';  
 
-        const { createClient } = supabase;
-        const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+     
 
-        // ================= 安全防护：立即执行函数包裹，避免全局污染 =================
-        (function() {
-            'use strict'; // 开启严格模式
+            // 初始化 Supabase
+            let supabaseClient = null;
+            try {
+                if (window.supabase && window.supabase.createClient) {
+                    supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                } else {
+                    console.error("Supabase SDK 未加载");
+                    document.getElementById('auth-msg').textContent = "网络异常，无法连接认证服务。";
+                }
+            } catch (e) {
+                console.error("Supabase 初始化失败:", e);
+                document.getElementById('auth-msg').textContent = "系统初始化失败，请检查配置。";
+            }
 
-            // ---------------- 登录认证逻辑 ----------------
+            // ================= 登录认证逻辑 =================
             const authContainer = document.getElementById('auth-container');
             const appContainer = document.getElementById('app-container');
             const authTitle = document.getElementById('auth-title');
@@ -240,6 +240,7 @@
             }
 
             btnSubmit.addEventListener('click', async () => {
+                if (!supabaseClient) return showMsg('认证服务未加载，请刷新。');
                 const email = emailInput.value.trim();
                 const password = passwordInput.value;
                 if (!email || !password) return showMsg('请填写邮箱和密码');
@@ -256,7 +257,7 @@
                         const { data, error } = await supabaseClient.auth.signUp({ email, password });
                         if (error) throw error;
                         if (data.session) showMsg('注册成功，已自动登录。', 'success');
-                        else showMsg('注册成功！请检查邮箱点击确认链接后再登录。', 'success');
+                        else showMsg('注册成功！请查收验证邮件后再登录。', 'success');
                     }
                 } catch (err) {
                     showMsg(err.message || '操作失败');
@@ -267,25 +268,27 @@
             });
 
             btnLogout.addEventListener('click', async () => {
-                await supabaseClient.auth.signOut();
+                if (supabaseClient) await supabaseClient.auth.signOut();
             });
 
-            // 核心：监听登录状态，自动实现“记住密码”免登录
-            supabaseClient.auth.onAuthStateChange((event, session) => {
-                if (session && session.user) {
-                    authContainer.style.display = 'none';
-                    appContainer.style.display = 'block';
-                    userInfo.textContent = `当前用户: ${session.user.email}`;
-                    calculate(); 
-                } else {
-                    authContainer.style.display = 'flex';
-                    appContainer.style.display = 'none';
-                    emailInput.value = '';
-                    passwordInput.value = '';
-                }
-            });
+            if (supabaseClient) {
+                supabaseClient.auth.onAuthStateChange((event, session) => {
+                    if (session && session.user) {
+                        authContainer.style.display = 'none';
+                        appContainer.style.display = 'block';
+                        userInfo.textContent = `当前用户: ${session.user.email}`;
+                        calculate(); 
+                    } else {
+                        authContainer.style.display = 'flex';
+                        appContainer.style.display = 'none';
+                        emailInput.value = '';
+                        passwordInput.value = '';
+                    }
+                });
+            }
 
             btnForgot.addEventListener('click', async () => {
+                if (!supabaseClient) return;
                 const email = emailInput.value.trim();
                 if (!email) return showMsg('请先填写邮箱地址');
                 const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
@@ -295,14 +298,12 @@
                 else showMsg('重置密码邮件已发送，请查收。', 'success');
             });
 
-
-            // ---------------- 计算器核心逻辑 ----------------
+            // ================= 计算器核心逻辑 =================
             document.getElementById('btn-toggle-details').addEventListener('click', () => {
                 const panel = document.getElementById('details-panel');
                 panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
             });
 
-            // 安全提取数值：过滤非法字符，防止隐式类型转换攻击
             const getVal = (id) => {
                 const val = parseFloat(document.getElementById(id).value);
                 return isNaN(val) ? 0 : val;
@@ -310,11 +311,13 @@
 
             function calculate() {
                 const P = Math.max(getVal('in-price'), 0.01); 
+                
+                // 提取基础数据
                 const cGoods = Math.max(getVal('in-cost-goods'), 0);
                 const cExpress = Math.max(getVal('in-cost-express'), 0);
                 const cLabor = Math.max(getVal('in-cost-labor'), 0);
                 const cInsurance = Math.max(getVal('in-cost-insurance'), 0);
-                const totalBaseCost = cGoods + cExpress + cLabor + cInsurance;
+                const totalBaseCost = cGoods + cExpress + cLabor + cInsurance; // 产品成本
 
                 const R_return = Math.min(Math.max(getVal('in-return'), 0), 100) / 100;
                 const R_damage = Math.min(Math.max(getVal('in-damage'), 0), 100) / 100;
@@ -322,33 +325,40 @@
                 
                 const F_rate = Math.min(Math.max(getVal('in-platform-rate'), 0), 100) / 100;
                 const Tax_rate = Math.min(Math.max(getVal('in-tax-rate'), 0), 100) / 100;
+                const totalRate = F_rate + Tax_rate; // 默认 0.01 + 0.01 = 0.02
                 
                 const adCost = Math.max(getVal('in-adcost'), 0); 
                 
-                const grossProfit = P - totalBaseCost;
+                // 计算各项明细
+                const grossProfit = P - totalBaseCost; 
                 const profitMargin = (grossProfit / P) * 100;
                 
-                const returnCost = R_return * C_process;
-                const damageCost = R_return * R_damage * totalBaseCost;
-                
-                const retainedFund = grossProfit - returnCost - damageCost;
-                const platformFee = P * (F_rate + Tax_rate);
-                const adSpaceLimit = retainedFund - platformFee;
-                
+                const returnCost = R_return * C_process; // 退货成本项
+                const damageCost = R_return * R_damage * totalBaseCost; // 货损
+                const platformFee = P * totalRate; // 售价*0.02
+
+                // ========================================================
+                // 🌟 核心公式实现：每单净利润 = 售价 - 售价*0.02 - 产品成本 - 广告费 - 货损 - 退货成本项
+                // ========================================================
+                const netProfit = P - platformFee - totalBaseCost - adCost - damageCost - returnCost;
+
+                // 计算保本投产比 (分母为 毛利 - 退货成本 - 货损)
+                const denominatorSum = grossProfit - (returnCost + damageCost);
                 let breakevenROI = 999;
-                if (adSpaceLimit > 0) {
-                    breakevenROI = P / adSpaceLimit;
+                if (denominatorSum > 0) {
+                    breakevenROI = P / denominatorSum;
                 }
 
-                const netProfit = adSpaceLimit - adCost;
+                // ===== 更新财务明细 UI (直观的减法流水账) =====
+                document.getElementById('det-price').innerText = P.toFixed(2) + ' 元';
+                document.getElementById('det-platform-fee').innerText = '-' + platformFee.toFixed(2) + ' 元';
+                document.getElementById('det-total-cost').innerText = '-' + totalBaseCost.toFixed(2) + ' 元';
+                document.getElementById('det-adcost').innerText = '-' + adCost.toFixed(2) + ' 元';
+                document.getElementById('det-damage-cost').innerText = '-' + damageCost.toFixed(2) + ' 元';
+                document.getElementById('det-return-cost').innerText = '-' + returnCost.toFixed(2) + ' 元';
+                document.getElementById('det-netprofit').innerText = netProfit.toFixed(2) + ' 元';
 
-                // 安全更新 DOM (使用 innerText 防止 XSS 注入)
-                document.getElementById('det-total-cost').innerText = totalBaseCost.toFixed(2) + ' 元';
-                document.getElementById('det-return-loss').innerText = (returnCost + damageCost).toFixed(2) + ' 元';
-                document.getElementById('det-retained').innerText = retainedFund.toFixed(2) + ' 元';
-                document.getElementById('det-platform-fee').innerText = platformFee.toFixed(2) + ' 元';
-                document.getElementById('det-adspace').innerText = adSpaceLimit.toFixed(2) + ' 元';
-
+                // ===== 渲染核心数据 UI =====
                 document.getElementById('res-breakeven').innerText = breakevenROI === 999 ? '模型亏损' : breakevenROI.toFixed(2);
                 document.getElementById('res-gross').innerText = grossProfit.toFixed(2);
                 document.getElementById('res-margin').innerText = profitMargin.toFixed(1) + '%';
@@ -360,18 +370,19 @@
                 else if (netProfit < 0) netProfitEl.className = 'val loss';
                 else netProfitEl.className = 'val neutral';
 
+                // ===== 状态研判 =====
                 const healthProgress = document.getElementById('health-progress');
                 const healthText = document.getElementById('res-health-text');
                 const healthDesc = document.getElementById('res-health-desc');
 
                 healthProgress.style.width = "0%";
 
-                if (adSpaceLimit <= 0) {
+                if (denominatorSum <= 0) {
                     healthText.innerText = "模型亏损 (无法投放)";
                     healthText.style.color = "var(--danger-color)";
                     healthProgress.style.background = "var(--danger-color)";
                     healthProgress.style.width = "100%";
-                    healthDesc.innerText = "该产品留存资金连平台扣费都无法覆盖。基础盘是坏的，投一分钱亏一分钱。请直接下架或重构供应链成本。";
+                    healthDesc.innerText = "产品留存资金连平台扣费都无法覆盖。请直接下架或重构供应链成本。";
                     return;
                 }
                 if (netProfit < 0 && netProfit <= -5) {
@@ -379,7 +390,7 @@
                     healthText.style.color = "var(--danger-color)";
                     healthProgress.style.background = "var(--danger-color)";
                     healthProgress.style.width = "100%";
-                    healthDesc.innerText = `单笔亏损达 ${Math.abs(netProfit).toFixed(2)} 元，属于严重失血！请立即关停该计划或大幅降出价，防止公司产生实质性烂账。`;
+                    healthDesc.innerText = `单笔亏损达 ${Math.abs(netProfit).toFixed(2)} 元，属于严重失血！请立即关停该计划或大幅降出价。`;
                     return;
                 }
                 if (netProfit < 0 && netProfit > -5) {
@@ -387,7 +398,7 @@
                     healthText.style.color = "var(--warning-color)";
                     healthProgress.style.background = "var(--warning-color)";
                     healthProgress.style.width = "25%";
-                    healthDesc.innerText = `当前广告出价略高于极限空间（微亏）。切勿盲目放量，建议微调降低出价或优化转化率，拉回保本线以上。`;
+                    healthDesc.innerText = `当前广告出价略高（微亏）。切勿盲目放量，建议微调降低出价或优化转化率。`;
                     return;
                 }
 
@@ -398,7 +409,7 @@
                     healthText.style.color = "var(--excellent-color)";
                     healthProgress.style.background = "var(--excellent-color)";
                     healthProgress.style.width = "100%";
-                    healthDesc.innerText = "利润达到硬成本的2倍以上，抗风险能力极强！如需大规模放量，请务必向老板申请预算，并密切监控退货率。";
+                    healthDesc.innerText = "利润达到硬成本的2倍以上，抗风险能力极强！可放心放量。";
                     return;
                 }
                 if (netProfit >= costBase && netProfit < costBase * 2) {
@@ -406,7 +417,7 @@
                     healthText.style.color = "var(--good-color)";
                     healthProgress.style.background = "var(--good-color)";
                     healthProgress.style.width = "75%";
-                    healthDesc.innerText = "纯利润已超过硬成本，模型稳健。可尝试稳步提量，保持当前投产比即可，稳扎稳打。";
+                    healthDesc.innerText = "纯利润已超过硬成本，模型稳健。可尝试稳步提量。";
                     return;
                 }
                 if (netProfit > 0 && netProfit < costBase) {
@@ -414,17 +425,16 @@
                     healthText.style.color = "var(--normal-color)";
                     healthProgress.style.background = "var(--normal-color)";
                     healthProgress.style.width = "50%";
-                    healthDesc.innerText = "能赚到钱，但利润不足以覆盖一次严重的退货或售后损耗。建议优先死磕转化率和退货率，提高利润率。";
+                    healthDesc.innerText = "能赚到钱，但利润不足以覆盖严重退货。建议优先死磕转化率和退货率。";
                     return;
                 }
             }
 
-            // 集中绑定所有计算输入框的事件（替代原 HTML 内联 oninput）
+            // 监听所有输入框
             document.querySelectorAll('.calc-input').forEach(input => {
                 input.addEventListener('input', calculate);
             });
-
-        })(); // 结束立即执行函数
+        });
     </script>
 </body>
 </html>
