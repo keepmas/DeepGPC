@@ -4,35 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>DeepGPC | 电商投放盈亏精算系统</title>
-	<!-- 自动寻找可用 CDN 节点，加载 Supabase -->
-<script>
-(function() {
-    var cdns = [
-        "https://unpkg.com/@supabase/supabase-js@2",
-        "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2",
-        "https://fastly.jsdelivr.net/npm/@supabase/supabase-js@2"
-    ];
-    var index = 0;
-    function tryLoad() {
-        if (index >= cdns.length) {
-            console.error("所有 CDN 源均加载失败");
-            return;
-        }
-        var script = document.createElement('script');
-        script.src = cdns[index];
-        script.onload = function() {
-            console.log("Supabase SDK 加载成功，来源: " + cdns[index]);
-        };
-        script.onerror = function() {
-            console.warn("CDN 加载失败，尝试下一个...");
-            index++;
-            tryLoad();
-        };
-        document.head.appendChild(script);
-    }
-    tryLoad();
-})();
-</script>
+    <!-- 从本地项目加载 Supabase SDK -->
+    <script src="./supabase.js"></script>
     
     <style>
         /* ================= 登录/注册页样式 ================= */
@@ -216,8 +189,9 @@
     <!-- 核心逻辑脚本 -->
     <script>
         window.addEventListener('DOMContentLoaded', () => {
-			const SUPABASE_URL = 'https://kkqtasejkqkzttquzobw.supabase.co';
-			const SUPABASE_ANON_KEY = 'sb_publishable_ndItPdxDyzerQgiXdrF8Sg_49pn0F59';  
+            // ================= 配置区（务必替换为你自己的数据） =================
+            const SUPABASE_URL = 'https://kkqtasejkqkzttguzobw.supabase.co'; 
+            const SUPABASE_ANON_KEY = 'sb_publishable_ndItpDxyzerQgixdrF8Sg_49pn0f59';   
 
             // 初始化 Supabase
             let supabaseClient = null;
